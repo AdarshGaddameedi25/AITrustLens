@@ -363,6 +363,9 @@ ${sandboxUntrustedContent(JSON.stringify(evidence, null, 2))}
 
 Overall Assessment: ${riskAssessment.verdict}`;
 
+  return callOpenRouter(systemPrompt, userPrompt);
+}
+
 /**
  * Generates identity analysis explanation.
  */
