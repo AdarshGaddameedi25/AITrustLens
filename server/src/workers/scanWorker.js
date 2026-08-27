@@ -35,7 +35,7 @@ import logger from '../utils/logger.js';
 async function processUrlScan(job) {
   const { scanId, url, userId, options = {} } = job.data;
 
-  logger.info('Worker: starting URL scan job', { jobId: job.id, scanId, url });
+  logger.info('Worker: starting URL scan job', { jobId: job.id, scanId, userId, url });
 
   await job.updateProgress(5);
 

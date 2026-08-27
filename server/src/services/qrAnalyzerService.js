@@ -4,7 +4,6 @@
  */
 
 import { analyzeUrl } from './urlAnalyzerService.js';
-import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 
 /**

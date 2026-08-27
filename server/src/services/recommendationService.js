@@ -220,7 +220,7 @@ export function generatePasswordRecommendations(breachResult) {
 /**
  * Generates recommendations for APK permission analysis.
  */
-export function generateApkRecommendations(permissions, riskAssessment) {
+export function generateApkRecommendations(permissions, _riskAssessment) {
   const recommendations = [];
   const criticalPermissions = permissions.filter((p) => p.riskLevel === 'CRITICAL');
   const highPermissions = permissions.filter((p) => p.riskLevel === 'HIGH');

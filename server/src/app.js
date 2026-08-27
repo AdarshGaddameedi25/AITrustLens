@@ -10,15 +10,11 @@ import authRoutes from './routes/auth.js';
 import analyzeRoutes from './routes/analyze.js';
 import scansRoutes from './routes/scans.js';
 import adminRoutes from './routes/admin.js';
-import { successResponse, errorResponse } from './utils/responseFormatter.js';
+import { successResponse } from './utils/responseFormatter.js';
 import { getRedisClient, isRedisAvailable } from './config/redis.js';
 import prisma from './config/database.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 

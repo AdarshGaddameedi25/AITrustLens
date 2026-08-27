@@ -140,9 +140,14 @@ function analyzeSender(sender) {
   // Check for spoofed display name
   if (sender.includes('<') && sender.includes('>')) {
     const displayName = sender.substring(0, sender.indexOf('<')).toLowerCase();
-    if (displayName.includes('paypal') || displayName.includes('amazon') || displayName.includes('apple')) {
-      if (domain && !domain.includes('paypal.com') && !domain.includes('amazon.com') && !domain.includes('apple.com')) {
+    const isBrandName = ['paypal', 'amazon', 'apple', 'google', 'microsoft', 'netflix', 'bank', 'support', 'security', 'billing'].some(brand => displayName.includes(brand));
+    
+    if (isBrandName) {
+      if (domain && !domain.includes('paypal.com') && !domain.includes('amazon.com') && !domain.includes('apple.com') && !domain.includes('google.com') && !domain.includes('microsoft.com') && !domain.includes('netflix.com')) {
         flags.push('DOMAIN_MISMATCH');
+      }
+      if (domain && FREE_EMAIL_PROVIDERS.includes(domain)) {
+        flags.push('FREE_PROVIDER_SPOOF');
       }
     }
   }

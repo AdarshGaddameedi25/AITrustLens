@@ -8,7 +8,6 @@ import logger from '../utils/logger.js';
 const SALT_ROUNDS = 12;
 const ACCESS_TOKEN_TTL = '15m';           // Short-lived
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
-const REFRESH_TOKEN_TTL_LABEL = '7d';
 
 // ─── Token Generation ─────────────────────────────────────────────────────────
 

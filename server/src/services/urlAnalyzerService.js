@@ -19,7 +19,7 @@
 
 import { normalizeUrl } from '../utils/urlNormalizer.js';
 import { validateSsrfSafeUrl } from '../utils/ssrfChecker.js';
-import { getCachedScan, acquireScanLock, cacheScanResult, releaseScanLock } from './scanCacheService.js';
+import { getCachedScan, acquireScanLock } from './scanCacheService.js';
 import { isRedisAvailable } from '../config/redis.js';
 import { enqueueUrlScan, getJobStatus } from '../queue/scanQueue.js';
 import { collectUrlEvidence } from '../risk/evidenceCollector.js';

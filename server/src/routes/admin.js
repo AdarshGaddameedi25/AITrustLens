@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin Routes — Phase 6
  * Protected by authenticate + requireAdmin middleware.
  * All endpoints return paginated, structured responses.
@@ -6,8 +6,7 @@
 import { Router } from 'express';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 import { getAllScans, getDashboardStats } from '../services/adminService.js';
-import { successResponse, errorResponse } from '../utils/responseFormatter.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
+import { successResponse } from '../utils/responseFormatter.js';
 
 const router = Router();
 
