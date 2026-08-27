@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Shield, Home, Link2, QrCode, Mail, Smartphone, Key, FileText, CheckCircle, LogOut } from 'lucide-react';
+import { Shield, Home, Link2, QrCode, Mail, Smartphone, Key, FileText, CheckCircle, Fingerprint, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Sidebar.css';
 
@@ -11,6 +11,7 @@ const navItems = [
   { path: '/analyze/email', label: 'Email Phishing', icon: Mail },
   { path: '/analyze/scam', label: 'Scam Messages', icon: Smartphone },
   { path: '/analyze/password', label: 'Password Check', icon: Key },
+  { path: '/analyze/identity', label: 'Digital Identity', icon: Fingerprint },
   { path: '/analyze/privacy', label: 'Privacy Policy', icon: FileText },
   { path: '/analyze/claim', label: 'Fact Checker', icon: CheckCircle },
   { path: '/analyze/apk', label: 'APK Security', icon: Smartphone },

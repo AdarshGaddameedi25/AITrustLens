@@ -68,7 +68,7 @@ function createUploader(allowedMimes, allowedExts, fieldName = 'file') {
 // Specific upload handlers
 export const uploadImage = createUploader(ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_EXTENSIONS);
 export const uploadDocument = createUploader(ALLOWED_DOCUMENT_TYPES, ALLOWED_DOCUMENT_EXTENSIONS);
-export const uploadApk = createUploader(ALLOWED_APK_TYPES, ALLOWED_APK_EXTENSIONS);
+export const uploadApk = createUploader(ALLOWED_APK_TYPES, ALLOWED_APK_EXTENSIONS, 'apk');
 export const uploadEmail = createUploader(ALLOWED_EMAIL_TYPES, ALLOWED_EMAIL_EXTENSIONS);
 
 /**

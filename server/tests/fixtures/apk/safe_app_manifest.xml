@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.calculator"
+    android:versionName="1.0.0"
+    android:versionCode="1">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <application android:label="Simple Calculator">
+        <activity android:name=".MainActivity" android:exported="true" />
+    </application>
+</manifest>

@@ -249,3 +249,86 @@ export function generateApkRecommendations(permissions, _riskAssessment) {
 
   return recommendations;
 }
+
+/**
+ * Generates actionable recommendations for Digital Identity analysis.
+ * @param {Object} evidenceCollection
+ * @param {Object} riskAssessment
+ * @returns {Recommendation[]}
+ */
+export function generateIdentityRecommendations(evidenceCollection, riskAssessment) {
+  const recommendations = [];
+  const items = evidenceCollection?.items || [];
+
+  const disposable = items.find((i) => i.indicator === 'DOMAIN_CLASSIFICATION')?.value?.isDisposable;
+  const mx = items.find((i) => i.indicator === 'DNS_MX_RECORDS')?.value;
+  const spf = items.find((i) => i.indicator === 'DNS_SPF_RECORD')?.value;
+  const dmarc = items.find((i) => i.indicator === 'DNS_DMARC_RECORD')?.value;
+  const isFree = items.find((i) => i.indicator === 'DOMAIN_CLASSIFICATION')?.value?.isFreeProvider;
+
+  if (disposable) {
+    recommendations.push({
+      priority: 'CRITICAL',
+      category: 'IDENTITY',
+      title: 'Disposable Email Service Detected',
+      detail: 'This address belongs to a temporary or throwaway email service. Accounts registered with disposable addresses have zero long-term recovery security.',
+      action: 'Do not use disposable email addresses for banking, identity verification, or critical accounts.',
+      evidenceBasis: 'Domain matches known temporary email provider list',
+    });
+  }
+
+  if (mx && mx.hasMx === false) {
+    recommendations.push({
+      priority: 'HIGH',
+      category: 'DNS',
+      title: 'No Valid Mail Exchanger (MX) Records',
+      detail: 'The email domain has no active MX records configured and cannot receive incoming mail or security password reset tokens.',
+      action: 'Verify domain registration and MX DNS configuration with your email administrator.',
+      evidenceBasis: 'DNS MX query returned 0 valid mail exchangers',
+    });
+  }
+
+  if (!isFree && spf && spf.hasSpf === false) {
+    recommendations.push({
+      priority: 'HIGH',
+      category: 'AUTHENTICATION',
+      title: 'Missing SPF (Sender Policy Framework)',
+      detail: 'The domain lacks an SPF DNS record, making it vulnerable to sender spoofing and business email compromise (BEC).',
+      action: 'Publish a strict v=spf1 TXT record in domain DNS specifying authorized outbound mail servers.',
+      evidenceBasis: 'DNS TXT lookup found no v=spf1 record',
+    });
+  }
+
+  if (!isFree && dmarc && dmarc.hasDmarc === false) {
+    recommendations.push({
+      priority: 'MEDIUM',
+      category: 'AUTHENTICATION',
+      title: 'Missing DMARC Policy',
+      detail: 'The domain does not have a DMARC policy (_dmarc TXT record), allowing unauthorized senders to forge emails without rejection.',
+      action: 'Deploy a DMARC policy with at least p=quarantine or p=reject to protect domain brand identity.',
+      evidenceBasis: 'DNS TXT lookup on _dmarc host returned no DMARC record',
+    });
+  }
+
+  // Universal Best Practices
+  recommendations.push({
+    priority: riskAssessment?.trustScore < 50 ? 'HIGH' : 'MEDIUM',
+    category: 'IDENTITY_HYGIENE',
+    title: 'Enforce Multi-Factor Authentication (MFA)',
+    detail: 'Protect accounts associated with this email address with hardware security keys (FIDO2) or authenticator apps (TOTP).',
+    action: 'Enable app-based 2FA on primary email and connected sensitive online portals.',
+    evidenceBasis: 'Standard digital identity protection protocol',
+  });
+
+  recommendations.push({
+    priority: 'INFO',
+    category: 'MONITORING',
+    title: 'Monitor for Credential Breaches',
+    detail: 'Periodically check if your password or credentials appear in public leak databases.',
+    action: 'Use the AITrustLens Password Check tool and subscribe to breach alerts.',
+    evidenceBasis: 'Continuous identity exposure risk reduction',
+  });
+
+  return recommendations;
+}
+

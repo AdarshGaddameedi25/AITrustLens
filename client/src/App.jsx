@@ -11,6 +11,7 @@ import ScamAnalysis from './pages/ScamAnalysis';
 import PrivacyAnalysis from './pages/PrivacyAnalysis';
 import ClaimVerification from './pages/ClaimVerification';
 import ApkAnalysis from './pages/ApkAnalysis';
+import IdentityAnalysis from './pages/IdentityAnalysis';
 import Auth from './pages/Auth';
 import { Loader } from 'lucide-react';
 
@@ -81,6 +82,7 @@ function App() {
             <Route path="/analyze/privacy" element={<PrivacyAnalysis />} />
             <Route path="/analyze/claim" element={<ClaimVerification />} />
             <Route path="/analyze/apk" element={<ApkAnalysis />} />
+            <Route path="/analyze/identity" element={<IdentityAnalysis />} />
             
             {/* Catch all for unimplemented routes */}
             <Route path="/analyze/*" element={

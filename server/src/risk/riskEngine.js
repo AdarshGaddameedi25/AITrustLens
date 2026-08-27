@@ -28,7 +28,7 @@
  *      but they drop the Confidence Level and are surfaced to the user.
  */
 
-import { RISK_RULES, EMAIL_RISK_RULES, SCAM_RISK_RULES, PRIVACY_RISK_RULES, getRiskLevel, RISK_ENGINE_VERSION } from './riskRules.js';
+import { RISK_RULES, EMAIL_RISK_RULES, SCAM_RISK_RULES, PRIVACY_RISK_RULES, IDENTITY_RISK_RULES, getRiskLevel, RISK_ENGINE_VERSION } from './riskRules.js';
 import logger from '../utils/logger.js';
 
 const ENGINE_VERSION = 'ENGINE_V1';
@@ -83,7 +83,7 @@ export function calculateRiskAssessment(evidenceCollection, scanType = 'URL') {
   // Conflict Detection: High penalty vs Low penalty among high-weight rules
   const highRiskFlags = indicators.filter(i => i.isAvailable && i.weight >= 0.1 && i.riskValue >= 80);
   const lowRiskFlags = indicators.filter(i => i.isAvailable && i.weight >= 0.1 && i.riskValue <= 20);
-  const conflicts = evidenceCollection.conflicts || [];
+  const conflicts = evidenceCollection?.conflicts || [];
   
   if (highRiskFlags.length > 0 && lowRiskFlags.length > 0) {
     conflicts.push({
@@ -101,7 +101,6 @@ export function calculateRiskAssessment(evidenceCollection, scanType = 'URL') {
   const trustScore = Math.round(100 - rawRiskScore);
 
   // Evidence Coverage = (Sum of available weights / Total possible weights) * 100
-  // Instead of passing a blind number, calculate strictly mathematically.
   const totalTheoreticalWeight = Object.values(rules).reduce((acc, r) => acc + r.weight, 0);
   const evidenceCoverage = totalTheoreticalWeight > 0 
     ? Math.round((totalWeight / totalTheoreticalWeight) * 100) 
@@ -136,6 +135,9 @@ function getRulesForScanType(scanType) {
     case 'EMAIL': return EMAIL_RISK_RULES;
     case 'SCAM_MESSAGE': return SCAM_RISK_RULES;
     case 'PRIVACY_POLICY': return PRIVACY_RISK_RULES;
+    case 'DIGITAL_IDENTITY':
+    case 'IDENTITY':
+      return IDENTITY_RISK_RULES;
     case 'URL':
     case 'QR_CODE':
     default:

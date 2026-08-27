@@ -169,8 +169,8 @@ export function getRiskLevel(trustScore) {
   return 'MODERATE';
 }
 
-// ── Email/Scam/Privacy rules remain similar, omitting for brevity in URL scan context ──
-// These would also be adapted if we fully refactor those collectors, but URL is the primary focus of the mandate.
+export { IDENTITY_RISK_RULES } from './identityRiskRules.js';
 export const EMAIL_RISK_RULES = {};
 export const SCAM_RISK_RULES = {};
 export const PRIVACY_RISK_RULES = {};
+

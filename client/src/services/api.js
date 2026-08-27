@@ -112,6 +112,10 @@ export const analyzeService = {
   privacy: (contentOrUrl) => api.post('/analyze/privacy', contentOrUrl),
   claim: (claimData) => api.post('/analyze/claim', claimData),
   apk: (apkData) => api.post('/analyze/apk', apkData),
+  apkUpload: (formData) => api.post('/analyze/apk', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  identity: (email) => api.post('/analyze/identity', { email }),
   qr: (formData) => api.post('/analyze/qr', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),

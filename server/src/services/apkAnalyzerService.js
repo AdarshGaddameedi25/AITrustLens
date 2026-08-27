@@ -5,6 +5,7 @@
 import { callOpenRouter } from '../providers/openRouterProvider.js';
 import { validateAiOutput } from '../utils/aiOutputSchema.js';
 import { generateApkRecommendations } from './recommendationService.js';
+import { parseApkManifest } from '../utils/apkParser.js';
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 
@@ -144,3 +145,31 @@ export async function analyzeApkPermissions(permissions, appInfo, userId) {
     throw error;
   }
 }
+
+/**
+ * Analyzes an APK file directly by extracting its manifest.
+ * @param {string} filePath
+ * @param {string} userId
+ * @returns {Promise<Object>}
+ */
+export async function analyzeApkFile(filePath, userId) {
+  const extracted = await parseApkManifest(filePath);
+  const appInfo = {
+    appName: extracted.packageName.split('.').pop() || 'Android App',
+    packageName: extracted.packageName,
+    versionName: extracted.versionName,
+    activities: extracted.activities || [],
+    services: extracted.services || [],
+    receivers: extracted.receivers || [],
+    providers: extracted.providers || [],
+    dangerousFlags: extracted.dangerousFlags || [],
+    manifestFormat: extracted.manifestFormat,
+  };
+
+  const result = await analyzeApkPermissions(extracted.permissions, appInfo, userId);
+  return {
+    ...result,
+    extractedMetadata: appInfo,
+  };
+}
+

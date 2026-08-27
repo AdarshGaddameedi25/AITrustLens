@@ -71,6 +71,8 @@ export default function ApkAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStep, setAnalyzeStep] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
+  // apkMode: 'file' = real APK upload, 'manual' = permission checkbox mode
+  const [apkMode, setApkMode] = useState('manual');
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -110,66 +112,79 @@ export default function ApkAnalysis() {
       return;
     }
 
+    // Store the real file reference — manifest will be extracted server-side
     setUploadedFile(file);
     setError(null);
+    setResult(null);
+  };
 
-    // Simulate manifest extraction from APK file
-    // Generate simulated app metadata based on filenames
-    const name = file.name.replace('.apk', '').replace(/[-_]/g, ' ');
-    const pkg = `com.extracted.${name.toLowerCase().replace(/\s/g, '')}`;
-    
-    setAppName(name);
-    setPackageName(pkg);
-    setVersionName('1.0.0');
-
-    // Auto select random/common permissions for simulation variety
-    const simulatedPerms = [
-      'android.permission.INTERNET',
-      'android.permission.ACCESS_NETWORK_STATE',
-      ...[
-        'android.permission.READ_SMS',
-        'android.permission.RECORD_AUDIO',
-        'android.permission.CAMERA',
-        'android.permission.SYSTEM_ALERT_WINDOW',
-      ].filter(() => Math.random() > 0.4),
-    ];
-    setSelectedPermissions(simulatedPerms);
+  const loadDemoMode = () => {
+    // DEMO MODE: loads a clearly-labelled static fixture preset for reviewers without a real APK
+    loadPreset('banking');
+    setUploadedFile(null);
+    setApkMode('manual');
   };
 
   const handleAnalyze = async (e) => {
     if (e) e.preventDefault();
-    if (selectedPermissions.length === 0) {
-      setError('Please select or upload at least one permission to analyze.');
-      return;
+
+    // File upload mode: real APK must be selected
+    if (apkMode === 'file') {
+      if (!uploadedFile) {
+        setError('Please select an .apk file to upload and analyze.');
+        return;
+      }
+    } else {
+      // Manual mode: at least one permission must be selected
+      if (selectedPermissions.length === 0) {
+        setError('Please select at least one permission to analyze.');
+        return;
+      }
     }
 
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
 
-    const steps = [
-      'Uploading package archives...',
-      'Decompressing Android binary resources...',
-      'Decoding AndroidManifest.xml configuration...',
-      'Parsing package namespace & build variables...',
-      'Mapping standard & custom runtime permissions...',
-      'Consulting threat intelligence APIs & databases...',
-      'Applying risk rules engine rules...',
-      'Generating AI risk analysis explanations...',
+    const fileSteps = [
+      'Uploading APK archive to server...',
+      'Decompressing Android zip structure...',
+      'Locating AndroidManifest.xml entry...',
+      'Decoding binary AXML string pool...',
+      'Extracting permissions & component declarations...',
+      'Consulting permission threat database...',
+      'Applying deterministic risk scoring engine...',
+      'Generating AI security analysis...',
     ];
+    const manualSteps = [
+      'Validating permission list...',
+      'Consulting permission threat database...',
+      'Applying deterministic risk scoring engine...',
+      'Generating AI security analysis...',
+    ];
+    const steps = apkMode === 'file' ? fileSteps : manualSteps;
 
     for (let i = 0; i < steps.length; i++) {
       setAnalyzeStep(steps[i]);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 700));
     }
 
     try {
-      const response = await analyzeService.apk({
-        permissions: selectedPermissions,
-        appName: appName || 'Simulated Android Application',
-        packageName: packageName || 'com.example.simulatedapp',
-        versionName: versionName || '1.0.0',
-      });
+      let response;
+      if (apkMode === 'file' && uploadedFile) {
+        // Real APK upload via multipart/form-data — server extracts manifest
+        const formData = new FormData();
+        formData.append('apk', uploadedFile);
+        response = await analyzeService.apkUpload(formData);
+      } else {
+        // Manual permission JSON payload
+        response = await analyzeService.apk({
+          permissions: selectedPermissions,
+          appName: appName || 'Android Application',
+          packageName: packageName || 'com.example.app',
+          versionName: versionName || '1.0.0',
+        });
+      }
       setResult(response.data);
     } catch (err) {
       setError(err.error?.message || 'Failed to complete APK analysis. Please try again.');
@@ -206,18 +221,46 @@ export default function ApkAnalysis() {
         <p className="text-body mt-2">Scan Android application manifests for high-risk permissions, spyware flags, and privacy leaks.</p>
       </header>
 
-      <div className="preset-selector mb-4">
-        <span className="text-small font-medium text-muted mr-2">Load Simulation Preset:</span>
-        <button className="btn btn-secondary text-small py-1 px-3 mr-2" onClick={() => loadPreset('banking')}>
-          Targeted Trojan (Banking App)
+      {/* Mode Toggle & DEMO button */}
+      <div className="preset-selector mb-4" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <span className="text-small font-medium text-muted">Analysis Mode:</span>
+        <button
+          className={`btn text-small py-1 px-3 ${apkMode === 'file' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => { setApkMode('file'); setResult(null); setError(null); }}
+        >
+          <Upload size={14} className="mr-1" /> Upload .apk File
         </button>
-        <button className="btn btn-secondary text-small py-1 px-3 mr-2" onClick={() => loadPreset('flashlight')}>
-          Snooping Utility (Flashlight App)
+        <button
+          className={`btn text-small py-1 px-3 ${apkMode === 'manual' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => { setApkMode('manual'); setUploadedFile(null); setResult(null); setError(null); }}
+        >
+          <Check size={14} className="mr-1" /> Manual Permissions
         </button>
-        <button className="btn btn-secondary text-small py-1 px-3" onClick={() => loadPreset('calculator')}>
-          Safe Utility (Calculator App)
-        </button>
+
+        <span style={{ flex: 1 }} />
+
+        {/* ⚠️ DEMO MODE — loads a static fixture; NOT the default behaviour */}
+        <span className="text-tiny text-muted" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)', paddingLeft: '0.75rem' }}>
+          No APK? &nbsp;
+          <button
+            className="btn btn-ghost text-small py-1 px-2"
+            style={{ border: '1px dashed rgba(139,92,246,0.5)', color: 'var(--accent-secondary)', fontSize: '0.75rem' }}
+            onClick={loadDemoMode}
+            title="Loads a static demo preset — not a real APK scan"
+          >
+            ⚠️ DEMO MODE — Load Fixture Preset
+          </button>
+        </span>
       </div>
+
+      {apkMode === 'manual' && (
+        <div className="preset-selector mb-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+          <span className="text-tiny text-muted">Quick presets:</span>
+          <button className="btn btn-secondary text-small py-1 px-3" onClick={() => loadPreset('banking')}>Targeted Trojan</button>
+          <button className="btn btn-secondary text-small py-1 px-3" onClick={() => loadPreset('flashlight')}>Snooping Utility</button>
+          <button className="btn btn-secondary text-small py-1 px-3" onClick={() => loadPreset('calculator')}>Safe App</button>
+        </div>
+      )}
 
       <div className="grid grid-2gap mt-2">
         {/* Input Panel */}
@@ -227,15 +270,16 @@ export default function ApkAnalysis() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h3 className="text-h4 mb-4">Application Details</h3>
+          <h3 className="text-h4 mb-4">{apkMode === 'file' ? 'APK File Upload' : 'Application Details'}</h3>
 
-          {/* File Upload Area */}
+          {/* APK File Upload Area — real mode */}
+          {apkMode === 'file' && (
           <div className="file-upload-zone mb-4" style={{
-            border: '2px dashed rgba(255, 255, 255, 0.1)',
+            border: `2px dashed ${uploadedFile ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
             borderRadius: '12px',
             padding: '1.5rem',
             textAlign: 'center',
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: uploadedFile ? 'rgba(139,92,246,0.06)' : 'rgba(255, 255, 255, 0.02)',
             cursor: 'pointer',
             position: 'relative'
           }}>
@@ -257,15 +301,13 @@ export default function ApkAnalysis() {
               <div className="flex-center" style={{ flexDirection: 'column', gap: '0.5rem' }}>
                 <FileCode size={36} style={{ color: 'var(--accent-primary)' }} />
                 <span className="text-body font-medium">{uploadedFile.name}</span>
-                <span className="text-small text-muted">({(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                <span className="text-small text-muted">({(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB) — manifest will be extracted server-side</span>
                 <button
                   type="button"
                   className="btn btn-secondary text-small py-1 px-2 mt-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     setUploadedFile(null);
-                    setAppName('');
-                    setPackageName('');
                   }}
                 >
                   <Trash2 size={14} className="mr-1" /> Remove
@@ -279,8 +321,10 @@ export default function ApkAnalysis() {
               </div>
             )}
           </div>
+          )}
 
           <form onSubmit={handleAnalyze}>
+            {apkMode === 'manual' && (
             <div className="grid grid-2gap mb-4">
               <div>
                 <label className="text-small text-muted mb-1 block">Application Name</label>
@@ -304,8 +348,9 @@ export default function ApkAnalysis() {
                   disabled={isAnalyzing}
                 />
               </div>
-            </div>
+            </div>  {/* end grid grid-2gap for manual fields */}
 
+            {apkMode === 'manual' && (
             <h4 className="text-small font-medium text-muted mb-2">Configure Manifest Permissions ({selectedPermissions.length} selected)</h4>
             
             {/* Quick check permissions list */}
@@ -340,16 +385,19 @@ export default function ApkAnalysis() {
                 onChange={(e) => setCustomPermission(e.target.value)}
                 disabled={isAnalyzing}
               />
-              <button type="button" className="btn btn-secondary" onClick={handleAddCustomPermission} disabled={isAnalyzing}>
-                Add
-              </button>
-            </div>
+                <button type="button" className="btn btn-secondary" onClick={handleAddCustomPermission} disabled={isAnalyzing}>Add</button>
+              </div>
+            )} {/* end apkMode === manual */}
 
-            <button type="submit" className="btn btn-primary w-100" disabled={isAnalyzing || selectedPermissions.length === 0}>
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={isAnalyzing || (apkMode === 'file' ? !uploadedFile : selectedPermissions.length === 0)}
+            >
               {isAnalyzing ? (
-                <><Loader className="spin" size={18} /> Analyzing Package...</>
+                <><Loader className="spin" size={18} /> {apkMode === 'file' ? 'Extracting & Analyzing...' : 'Analyzing Package...'}</>
               ) : (
-                <><Shield size={18} /> Run APK Assessment</>
+                <><Shield size={18} /> {apkMode === 'file' ? 'Upload & Analyze APK' : 'Run APK Assessment'}</>
               )}
             </button>
           </form>

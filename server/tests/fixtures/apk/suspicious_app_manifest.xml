@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.suspicious.flashlight"
+    android:versionName="2.1.0"
+    android:versionCode="21">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <application android:label="Bright Flashlight">
+        <activity android:name=".FlashlightActivity" android:exported="true" />
+        <service android:name=".BackgroundSyncService" android:exported="false" />
+    </application>
+</manifest>

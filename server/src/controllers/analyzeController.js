@@ -6,6 +6,7 @@ import * as passwordService from '../services/passwordBreachService.js';
 import * as privacyService from '../services/privacyAnalyzerService.js';
 import * as apkService from '../services/apkAnalyzerService.js';
 import * as claimService from '../services/claimVerificationService.js';
+import * as identityService from '../services/identityAnalyzerService.js';
 import {
   validate,
   urlAnalysisSchema,
@@ -140,6 +141,26 @@ export async function analyzePrivacy(req, res, next) {
 
 export async function analyzeApk(req, res, next) {
   try {
+    // If multipart APK file is uploaded
+    if (req.file) {
+      try {
+        const result = await apkService.analyzeApkFile(req.file.path, req.user.id);
+        fs.unlink(req.file.path, (err) => {
+          if (err) logger.warn('Failed to delete temp APK file', { path: req.file.path });
+        });
+        return res.json(successResponse(result));
+      } catch (fileErr) {
+        if (req.file?.path) {
+          fs.unlink(req.file.path, () => {});
+        }
+        if (fileErr.statusCode === 400 || fileErr.code === 'INVALID_APK_ARCHIVE' || fileErr.code === 'MANIFEST_NOT_FOUND') {
+          return res.status(400).json(errorResponse(fileErr.code || 'APK_PARSING_ERROR', fileErr.message));
+        }
+        throw fileErr;
+      }
+    }
+
+    // JSON permissions payload
     const { data, error } = validate(apkPermissionsSchema, req.body);
     if (error) return res.status(400).json(errorResponse('VALIDATION_ERROR', error));
 
@@ -171,25 +192,7 @@ export async function analyzeIdentity(req, res, next) {
     const { data, error } = validate(identityAnalysisSchema, req.body);
     if (error) return res.status(400).json(errorResponse('VALIDATION_ERROR', error));
 
-    // Identity analysis: currently checks password breach for the email domain
-    // No HIBP email API (paid) — use available free evidence
-    const domain = data.email.split('@')[1];
-
-    const result = {
-      email: data.email,
-      domain,
-      analysisNote: 'Digital identity exposure analysis uses available free sources. For comprehensive dark-web monitoring, specialized services are required.',
-      recommendations: [
-        { priority: 'HIGH', category: 'IDENTITY', title: 'Enable MFA on All Accounts', detail: 'Use authenticator app-based multi-factor authentication on all important accounts.', action: 'Enable MFA immediately on email, banking, and social media accounts.' },
-        { priority: 'MEDIUM', category: 'IDENTITY', title: 'Use Unique Passwords', detail: 'Each online service should have a different, strong password.', action: 'Use a password manager (Bitwarden, 1Password) to manage unique passwords.' },
-        { priority: 'INFO', category: 'MONITORING', title: 'Monitor for Breaches', detail: 'Register with haveibeenpwned.com to receive notifications if your email appears in future breaches.', action: 'Visit haveibeenpwned.com and sign up for notifications.' },
-      ],
-      sources: [{ name: 'HIBP Email Breach API', status: 'UNAVAILABLE', reason: 'Requires paid subscription. Free k-anonymity password check available separately.' }],
-      trustScore: 70,
-      confidence: 'LOW',
-      evidenceCoverage: 20,
-    };
-
+    const result = await identityService.analyzeIdentity(data.email, req.user.id);
     res.json(successResponse(result));
   } catch (error) {
     next(error);
