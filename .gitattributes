@@ -1,0 +1,13 @@
+# Normalize line endings for all text files to LF in the repository.
+# This prevents Windows CRLF/LF diff noise across platforms.
+* text=auto eol=lf
+
+# Force binary for images and lock files to prevent corruption
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.svg text
+package-lock.json text eol=lf

@@ -1,0 +1,81 @@
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build outputs
+client/dist/
+client/build/
+server/dist/
+
+# Prisma
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary upload files
+server/uploads/temp/
+server/uploads/*.tmp
+uploads/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cache
+.eslintcache
+.parcel-cache/
+.cache/
+
+# Test/debug scripts & scratch files
+test_*.js
+*.test_local.js
+*_debug.js
+
+# Generated QR images used for testing
+*.qr.png
+valid_test_qr.png
+safebrowsing_test_qr.png
+qr_composited.png
+qr_binary.png
+qr_padded_clean.png
+
+# Internal AI review / documentation files (not for public repo)
+AITrustLens_AI_Review_Manifest.md
+AITrustLens_Project_Documentation.md

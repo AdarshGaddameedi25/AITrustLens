@@ -1,0 +1,12 @@
+{
+  "transform": {},
+  "testEnvironment": "node",
+  "testMatch": [
+    "**/tests/**/*.test.js"
+  ],
+  "moduleNameMapper": {},
+  "testTimeout": 30000,
+  "verbose": true,
+  "clearMocks": true,
+  "resetMocks": true
+}

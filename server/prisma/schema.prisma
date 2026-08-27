@@ -1,0 +1,299 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String?
+  role         UserRole  @default(USER)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  scans         Scan[]
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// ─── RefreshToken ─────────────────────────────────────────────────────────────
+// Implements refresh token rotation with reuse detection.
+// Each token belongs to a "family". On reuse of a revoked token, the entire
+// family is invalidated, protecting against token theft.
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  tokenHash   String   @unique @map("token_hash") // SHA-256 hash of the token — never stored plaintext
+  familyId    String   @map("family_id")          // Used to invalidate an entire lineage on reuse
+  expiresAt   DateTime @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  replacedBy  String?  @map("replaced_by")        // ID of the next token in the rotation chain
+  createdAt   DateTime @default(now()) @map("created_at")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ─── Scan ─────────────────────────────────────────────────────────────────────
+
+model Scan {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  scanType    ScanType   @map("scan_type")
+  status      ScanStatus @default(PENDING)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  completedAt DateTime?  @map("completed_at")
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  input           ScanInput?
+  result          ScanResult?
+  evidences       Evidence[]
+  riskAssessment  RiskAssessment?
+  recommendations Recommendation[]
+  auditLogs       AuditLog[]
+
+  @@index([userId])
+  @@index([scanType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("scans")
+}
+
+enum ScanType {
+  URL
+  QR_CODE
+  EMAIL
+  SCAM_MESSAGE
+  PASSWORD_BREACH
+  PRIVACY_POLICY
+  APK_PERMISSIONS
+  DIGITAL_IDENTITY
+  CLAIM_VERIFICATION
+}
+
+enum ScanStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+// ─── ScanInput ────────────────────────────────────────────────────────────────
+
+model ScanInput {
+  id              String   @id @default(uuid())
+  scanId          String   @unique @map("scan_id")
+  rawInput        String?  @map("raw_input") @db.Text
+  normalizedInput String?  @map("normalized_input") @db.Text
+  inputHash       String?  @map("input_hash")
+  fileReference   String?  @map("file_reference")
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@map("scan_inputs")
+}
+
+// ─── ScanResult ───────────────────────────────────────────────────────────────
+
+model ScanResult {
+  id               String           @id @default(uuid())
+  scanId           String           @unique @map("scan_id")
+  trustScore       Int?             @map("trust_score")
+  riskLevel        RiskLevel?       @map("risk_level")
+  confidence       ConfidenceLevel?
+  evidenceCoverage Float?           @map("evidence_coverage")
+  ruleSetVersion   String?          @map("rule_set_version") // e.g. "RISK_ENGINE_V1"
+  aiModel          String?          @map("ai_model")
+  aiPromptVersion  String?          @map("ai_prompt_version")
+  aiSummary        String?          @map("ai_summary") @db.Text
+  aiExplanation    Json?            @map("ai_explanation")
+  keyIndicators    Json?            @map("key_indicators")
+  limitations      Json?
+  rawApiResponses  Json?            @map("raw_api_responses")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@map("scan_results")
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MODERATE
+  LOW
+  HIGH_TRUST
+}
+
+enum ConfidenceLevel {
+  HIGH
+  MEDIUM
+  LOW
+  INSUFFICIENT
+}
+
+// ─── Evidence ─────────────────────────────────────────────────────────────────
+
+model Evidence {
+  id               String               @id @default(uuid())
+  scanId           String               @map("scan_id")
+  source           EvidenceSource
+  type             String
+  indicator        String
+  value            Json?
+  severity         EvidenceSeverity     @default(INFO)
+  confidence       ConfidenceLevel      @default(MEDIUM)
+  status           EvidenceStatus       @default(AVAILABLE)
+  interpretation   String?              @db.Text
+  isPositive       Boolean?             @map("is_positive")
+  riskContribution Float?               @map("risk_contribution")
+  freshness        Int                  @default(0) // Age of data in seconds
+  timestamp        DateTime             @default(now()) @map("timestamp")
+  
+  // Backward compatibility alias for any lingering code
+  checkedAt        DateTime             @default(now()) @map("checked_at")
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+  @@index([source])
+  @@map("evidences")
+}
+
+enum EvidenceStatus {
+  AVAILABLE
+  UNAVAILABLE
+  RATE_LIMITED
+  ERROR
+  PARTIAL
+  CONFLICTING
+  UNKNOWN
+  POSITIVE
+  NEGATIVE
+  WARNING
+}
+
+enum EvidenceSeverity {
+  CRITICAL
+  HIGH
+  MODERATE
+  LOW
+  INFO
+}
+
+enum EvidenceSource {
+  VIRUSTOTAL
+  GOOGLE_SAFE_BROWSING
+  URLSCAN
+  GOOGLE_FACTCHECK
+  HIBP_PWNED_PASSWORDS
+  TLS_INSPECTION
+  RDAP
+  HEADER_ANALYSIS
+  URL_PATTERN
+  AI_ANALYSIS
+  LOCAL_ANALYSIS
+}
+
+enum EvidenceAvailability {
+  AVAILABLE
+  UNAVAILABLE
+  RATE_LIMITED
+  ERROR
+  PARTIAL
+}
+
+// ─── RiskAssessment ───────────────────────────────────────────────────────────
+
+model RiskAssessment {
+  id              String   @id @default(uuid())
+  scanId          String   @unique @map("scan_id")
+  engineVersion   String   @default("ENGINE_V1") @map("engine_version")
+  ruleSetVersion  String   @default("RISK_ENGINE_V1") @map("rule_set_version")
+  rawScore        Float    @map("raw_score")
+  normalizedScore Float    @map("normalized_score")
+  weightedFactors Json     @map("weighted_factors")
+  riskIndicators  Json     @map("risk_indicators")
+  calculationMeta Json?    @map("calculation_meta")
+  calculatedAt    DateTime @default(now()) @map("calculated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@map("risk_assessments")
+}
+
+// ─── Recommendation ───────────────────────────────────────────────────────────
+
+model Recommendation {
+  id            String                 @id @default(uuid())
+  scanId        String                 @map("scan_id")
+  priority      RecommendationPriority @default(MEDIUM)
+  category      String
+  title         String
+  detail        String                 @db.Text
+  action        String?                @db.Text
+  evidenceBasis String?                @map("evidence_basis") @db.Text
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+  @@map("recommendations")
+}
+
+enum RecommendationPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// ─── AuditLog ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  scanId    String?  @map("scan_id")
+  action    String
+  metadata  Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scan Scan? @relation(fields: [scanId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
