@@ -23,7 +23,7 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100'),
   CLIENT_URL: z.string().default('http://localhost:5173'),
-  MAX_FILE_SIZE_MB: z.string().default('10'),
+  MAX_FILE_SIZE_MB: z.string().default('50'),
   UPLOAD_TEMP_DIR: z.string().default('uploads/temp'),
 });
 

@@ -87,6 +87,7 @@ export default function IdentityAnalysis() {
             <Mail className="input-icon" size={20} />
             <input
               type="email"
+              className="input-base with-icon w-100"
               placeholder="Enter email address (e.g., user@company.com or john@gmail.com)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

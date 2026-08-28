@@ -348,10 +348,12 @@ export default function ApkAnalysis() {
                   disabled={isAnalyzing}
                 />
               </div>
-            </div>  {/* end grid grid-2gap for manual fields */}
+            </div>
+            )} {/* end manual fields */}
 
             {apkMode === 'manual' && (
-            <h4 className="text-small font-medium text-muted mb-2">Configure Manifest Permissions ({selectedPermissions.length} selected)</h4>
+              <>
+                <h4 className="text-small font-medium text-muted mb-2">Configure Manifest Permissions ({selectedPermissions.length} selected)</h4>
             
             {/* Quick check permissions list */}
             <div className="permissions-checklist mb-4" style={{
@@ -387,6 +389,7 @@ export default function ApkAnalysis() {
               />
                 <button type="button" className="btn btn-secondary" onClick={handleAddCustomPermission} disabled={isAnalyzing}>Add</button>
               </div>
+              </>
             )} {/* end apkMode === manual */}
 
             <button
