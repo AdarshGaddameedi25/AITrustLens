@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import analyzeRoutes from './routes/analyze.js';
 import scansRoutes from './routes/scans.js';
 import adminRoutes from './routes/admin.js';
+import publicRoutes from './routes/public.js';
 import { successResponse } from './utils/responseFormatter.js';
 import { getRedisClient, isRedisAvailable } from './config/redis.js';
 import prisma from './config/database.js';
@@ -27,9 +28,22 @@ app.use(
 );
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  env.clientUrl,                    // Primary (from .env)
+  'http://localhost:3000',          // Next.js frontend dev
+  'http://localhost:5173',          // Vite client dev (legacy)
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (SSE, curl, Postman, same-origin)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -106,6 +120,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/analyze', analyzeRoutes);
 app.use('/api/scans', scansRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/public', publicRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use(notFoundHandler);
